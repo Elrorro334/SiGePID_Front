@@ -111,7 +111,7 @@ export const wizardApi = {
 // ORDERS
 // ============================================================
 export interface OrderItemRequest { productId: string; productName: string; quantity: number; unitPrice: number; }
-export interface OrderRequest { userId: string; userEmail?: string; items: OrderItemRequest[]; }
+export interface OrderRequest { userId: string; userEmail?: string; shippingAddress?: string; items: OrderItemRequest[]; }
 
 export interface OrderItemResponse { productId: string; productName: string; quantity: number; unitPrice: number; subtotal: number; }
 export interface OrderResponse {

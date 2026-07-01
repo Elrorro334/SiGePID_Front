@@ -28,6 +28,7 @@ export default function CartPage() {
       await ordersApi.createOrder({
         userId: String(user.id),
         userEmail: user.email,
+        shippingAddress: "Dirección principal",
         items: items.map(item => ({
           productId: item.productId,
           productName: item.name,
