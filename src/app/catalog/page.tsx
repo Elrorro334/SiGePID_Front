@@ -5,13 +5,16 @@ import { ProductCard } from '@/components/ui/ProductCard';
 import { catalogApi, ProductResponse } from '@/lib/api';
 import { Loader2, AlertCircle, Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { Suspense } from 'react';
 
-export default function CatalogPage() {
+function CatalogContent() {
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<ProductResponse[]>([]);
   const [filtered, setFiltered] = useState<ProductResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [error, setError] = useState(false);
 
@@ -124,5 +127,13 @@ export default function CatalogPage() {
         </motion.div>
       )}
     </div>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin w-10 h-10 text-primary" /></div>}>
+      <CatalogContent />
+    </Suspense>
   );
 }

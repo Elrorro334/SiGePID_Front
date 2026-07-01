@@ -6,6 +6,7 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  maxStock: number;
   imageUrl?: string;
 }
 
@@ -49,7 +50,7 @@ export const useCartStore = create<CartState>()(
         }
         set({
           items: get().items.map((i) => 
-            i.productId === productId ? { ...i, quantity } : i
+            i.productId === productId ? { ...i, quantity: Math.min(quantity, i.maxStock) } : i
           )
         });
       },

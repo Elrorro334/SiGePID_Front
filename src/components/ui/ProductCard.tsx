@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import { useCartStore } from '@/store/useCartStore';
 import toast from 'react-hot-toast';
 
+import Link from 'next/link';
+
 interface Product {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ interface Product {
   price: number;
   stock: number;
   categoryName?: string | null;
+  imageUrl?: string;
 }
 
 interface ProductCardProps {
@@ -28,13 +31,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   const inStock = product.stock > 0;
   const lowStock = product.stock > 0 && product.stock <= 5;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (!inStock) return;
     addItem({
       productId: product.id,
       name: product.name,
       price: product.price,
-      quantity: 1
+      quantity: 1,
+      maxStock: product.stock,
+      imageUrl: product.imageUrl,
     });
     toast.success(`${product.name} agregado al carrito`, {
       icon: '🛒',
@@ -52,13 +58,23 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5 }}
       transition={{ duration: 0.3 }}
-      className="group flex flex-col bg-surface rounded-2xl overflow-hidden border border-surface-border shadow-sm hover:shadow-xl transition-all duration-300"
+      className="group flex flex-col bg-surface rounded-2xl overflow-hidden border border-surface-border shadow-sm hover:shadow-xl transition-all duration-300 relative"
     >
-      {/* Placeholder Image Box */}
-      <div className="relative aspect-square bg-surface-muted overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center text-content-muted font-medium bg-gradient-to-br from-surface-muted to-surface-border">
-          {product.name.substring(0, 2).toUpperCase()}
-        </div>
+      <Link href={`/catalog/${product.id}`} className="absolute inset-0 z-0"></Link>
+      
+      {/* Product Image */}
+      <div className="relative aspect-square bg-surface-muted overflow-hidden z-10 pointer-events-none">
+        {product.imageUrl ? (
+          <img 
+            src={product.imageUrl} 
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-content-muted font-medium bg-gradient-to-br from-surface-muted to-surface-border">
+            {product.name.substring(0, 2).toUpperCase()}
+          </div>
+        )}
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-2">
           {!inStock ? (
@@ -83,7 +99,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       </div>
 
       {/* Content */}
-      <div className="p-5 flex flex-col flex-1">
+      <div className="p-5 flex flex-col flex-1 pointer-events-none z-10 relative">
         <h3 className="text-lg font-bold text-content-strong line-clamp-1 mb-1 group-hover:text-primary transition-colors">
           {product.name}
         </h3>
@@ -91,7 +107,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           {product.description}
         </p>
         
-        <div className="flex items-end justify-between mt-auto pt-4 border-t border-surface-border/50">
+        <div className="flex items-end justify-between mt-auto pt-4 border-t border-surface-border/50 pointer-events-auto relative z-20">
           <div>
             <span className="text-xs text-content font-medium uppercase tracking-wider">Precio</span>
             <div className="text-xl font-black text-content-strong">

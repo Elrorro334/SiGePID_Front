@@ -23,7 +23,7 @@ export default function LoginPage() {
     try {
       const { data } = await authApi.login({ username, password });
       login(data.token, {
-        id: 0,
+        id: data.userId,
         username: data.username,
         email: data.email,
         role: data.role,

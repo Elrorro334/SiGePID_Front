@@ -36,13 +36,16 @@ export default api;
 // ============================================================
 export interface LoginRequest { username: string; password: string; }
 export interface RegisterRequest { username: string; email: string; password: string; role?: string; }
-export interface AuthResponse { token: string; username: string; email: string; role: string; }
+export interface AuthResponse { token: string; username: string; email: string; role: string; userId: number; }
+export interface AuthProfileResponse { id: number; username: string; email: string; role: string; }
 
 export const authApi = {
   login: (data: LoginRequest) =>
     api.post<AuthResponse>('/auth/login', data),
   register: (data: RegisterRequest) =>
     api.post<AuthResponse>('/auth/register', { ...data, role: data.role ?? 'USER' }),
+  getProfile: () =>
+    api.get<AuthProfileResponse>('/auth/profile'),
 };
 
 // ============================================================
@@ -108,7 +111,7 @@ export const wizardApi = {
 // ORDERS
 // ============================================================
 export interface OrderItemRequest { productId: string; productName: string; quantity: number; unitPrice: number; }
-export interface OrderRequest { userId: string; items: OrderItemRequest[]; }
+export interface OrderRequest { userId: string; userEmail?: string; items: OrderItemRequest[]; }
 
 export interface OrderItemResponse { productId: string; productName: string; quantity: number; unitPrice: number; subtotal: number; }
 export interface OrderResponse {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Brain, RefreshCcw, ShoppingCart, TrendingUp, Tag, Package } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { wizardApi, WizardResponse, WizardOptions } from '@/lib/api';
+import { wizardApi, catalogApi, WizardResponse, WizardOptions } from '@/lib/api';
 import { useCartStore } from '@/store/useCartStore';
 import toast from 'react-hot-toast';
 
@@ -75,18 +75,32 @@ export default function WizardPage() {
     setAnswers([]);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!result) return;
-    addItem({
-      productId: `wizard-${result.productoRecomendado.toLowerCase().replace(/\s+/g, '-')}`,
-      name: result.productoRecomendado,
-      price: result.precioPromedio,
-      quantity: 1,
-    });
-    toast.success(`${result.productoRecomendado} agregado al carrito`, {
-      icon: '🛒',
-      style: { borderRadius: '10px', background: '#333', color: '#fff' },
-    });
+    try {
+      const res = await catalogApi.getAllProducts();
+      const products = res.data;
+      const match = products.find(p => p.name.toLowerCase().includes(result.productoRecomendado.toLowerCase()));
+      
+      if (match) {
+        addItem({
+          productId: match.id,
+          name: match.name,
+          price: match.price,
+          quantity: 1,
+          maxStock: match.stock,
+          imageUrl: match.imageUrl,
+        });
+        toast.success(`${match.name} agregado al carrito`, {
+          icon: '🛒',
+          style: { borderRadius: '10px', background: '#333', color: '#fff' },
+        });
+      } else {
+        toast.error('Lo sentimos, este producto no está en stock actualmente.');
+      }
+    } catch {
+      toast.error('Error al conectar con el catálogo.');
+    }
   };
 
   return (

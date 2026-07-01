@@ -3,14 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Box, ShieldCheck, Zap, Brain, Loader2 } from 'lucide-react';
+import { ArrowRight, Sparkles, Box, ShieldCheck, Heart, Brain, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { useAuthStore } from '@/store/useAuthStore';
 import { wizardApi, WizardResponse } from '@/lib/api';
 
-// Mapa de rango de edad en base a username/perfil para la demo
-// En producción, esto vendría del perfil completo del usuario
+// Perfil por defecto para las recomendaciones rápidas
 const DEFAULT_RANGO_EDAD = 'Adultos Jóvenes (18-35)';
 const DEFAULT_USO = 'Uso Personal';
 
@@ -18,12 +17,15 @@ export default function Home() {
   const { isAuthenticated, user } = useAuthStore();
   const [recommendations, setRecommendations] = useState<WizardResponse[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    setIsMounted(true);
+  }, []);
 
-    // Solicitar recomendaciones personalizadas para las 5 categorías
-    // usando el perfil básico del usuario autenticado
+  useEffect(() => {
+    if (!isAuthenticated || !isMounted) return;
+
     setLoadingRecs(true);
     const categories = ['Electrónica', 'Ropa', 'Hogar', 'Deportes', 'Juguetes'];
 
@@ -40,127 +42,158 @@ export default function Home() {
         const recs = results
           .filter(r => r.status === 'fulfilled')
           .map(r => (r as PromiseFulfilledResult<{ data: WizardResponse }>).value.data);
-        // Deduplicar por producto recomendado y mostrar máx. 4
+        
+        // Mostrar máximo 4 productos únicos
         const unique = Array.from(
           new Map(recs.map(r => [r.productoRecomendado, r])).values()
         ).slice(0, 4);
         setRecommendations(unique);
       })
       .finally(() => setLoadingRecs(false));
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isMounted]);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 15 }
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-5rem)]">
       {/* Hero Section */}
-      <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-surface-muted py-20 px-4 sm:px-6 lg:px-8">
-
-        {/* Background Gradients */}
+      <section className="relative flex-1 flex items-center justify-center overflow-hidden bg-surface-muted py-24 px-4 sm:px-6 lg:px-8">
+        
+        {/* Animated Background Gradients */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/5 blur-[120px]" />
-          <div className="absolute -bottom-[30%] -left-[10%] w-[60%] h-[60%] rounded-full bg-secondary/5 blur-[100px]" />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.5, 0.3] 
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -top-[30%] -right-[10%] w-[70%] h-[70%] rounded-full bg-primary/10 blur-[120px]" 
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.3, 0.4, 0.3] 
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            className="absolute -bottom-[30%] -left-[10%] w-[60%] h-[60%] rounded-full bg-secondary/10 blur-[100px]" 
+          />
         </div>
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center space-y-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center space-x-2 bg-white/60 backdrop-blur-md px-4 py-2 rounded-full border border-surface-border text-primary font-medium shadow-sm mb-4"
-          >
-            <Sparkles size={18} />
-            <span>Descubre nuestro Asistente Inteligente</span>
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 max-w-5xl mx-auto text-center space-y-8"
+        >
+          <motion.div variants={itemVariants}>
+            <div className="inline-flex items-center space-x-2 bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-surface-border text-primary font-medium shadow-sm mb-4 hover:shadow-md transition-shadow cursor-default">
+              <Sparkles size={18} className="animate-pulse" />
+              <span>Descubre tu estilo perfecto</span>
+            </div>
           </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-black text-content-strong tracking-tight"
-          >
-            La forma más{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
-              inteligente
-            </span>{' '}
-            de comprar.
+          <motion.h1 variants={itemVariants} className="text-5xl md:text-7xl font-black text-content-strong tracking-tight">
+            Comprar nunca fue tan{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary relative inline-block">
+              fácil e intuitivo
+              <motion.span 
+                className="absolute -bottom-2 left-0 w-full h-1 bg-gradient-to-r from-primary to-secondary rounded-full"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 1, duration: 0.8 }}
+              />
+            </span>
+            .
           </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl md:text-2xl text-content-muted max-w-3xl mx-auto leading-relaxed"
-          >
-            Utilizamos árboles de decisión y análisis en tiempo real para recomendarte exactamente lo
-            que necesitas, cuando lo necesitas.
+          <motion.p variants={itemVariants} className="text-xl md:text-2xl text-content-muted max-w-3xl mx-auto leading-relaxed">
+            Te conocemos mejor que nadie. Nuestro asistente aprende de tus gustos para ofrecerte una experiencia de compra diseñada especialmente para ti.
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8"
-          >
+          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
             <Link href="/catalog" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full text-lg gap-2 shadow-xl shadow-primary/20">
-                Explorar Catálogo <ArrowRight size={20} />
+              <Button size="lg" className="w-full text-lg gap-2 shadow-xl shadow-primary/20 hover:-translate-y-1 transition-transform duration-300">
+                Ver todo el catálogo <ArrowRight size={20} />
               </Button>
             </Link>
             <Link href="/wizard" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full text-lg bg-surface/50 backdrop-blur-sm">
-                Usar Asistente <Sparkles size={20} className="ml-2" />
+              <Button variant="outline" size="lg" className="w-full text-lg bg-surface/50 backdrop-blur-sm hover:-translate-y-1 transition-transform duration-300">
+                Ayúdame a elegir <Sparkles size={20} className="ml-2" />
               </Button>
             </Link>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* ======================================================
           SECCIÓN PERSONALIZADA — Solo visible si está autenticado
       ====================================================== */}
-      {isAuthenticated && (
-        <section className="py-16 bg-surface border-t border-surface-border">
+      {isMounted && isAuthenticated && (
+        <section className="py-20 bg-surface border-t border-surface-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                  <Brain size={24} />
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10"
+            >
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/10 rounded-xl text-primary shadow-inner">
+                  <Heart size={28} className="animate-pulse" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-content-strong">
-                    Recomendado para ti, {user?.username} 👋
+                  <h2 className="text-3xl font-black text-content-strong">
+                    Especialmente para ti, {user?.username} 👋
                   </h2>
-                  <p className="text-content-muted text-sm mt-0.5">
-                    Selección personalizada por nuestro motor ML en cada categoría
+                  <p className="text-content-muted text-base mt-1">
+                    Una selección curada de productos que sabemos que te encantarán.
                   </p>
                 </div>
               </div>
-              <Link href="/wizard" className="hidden sm:block">
-                <Button variant="outline" size="sm">
-                  <Sparkles size={14} className="mr-1.5" /> Personalizar más
+              <Link href="/wizard">
+                <Button variant="outline" size="default" className="hover:border-primary hover:text-primary transition-colors">
+                  <Sparkles size={16} className="mr-2" /> Descubrir más
                 </Button>
               </Link>
-            </div>
+            </motion.div>
 
             {loadingRecs ? (
               <div className="flex justify-center items-center h-48">
-                <div className="flex flex-col items-center gap-3 text-content-muted">
-                  <Loader2 size={32} className="animate-spin text-primary" />
-                  <span className="text-sm">Calculando recomendaciones personalizadas...</span>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  className="flex flex-col items-center gap-4 text-content-muted"
+                >
+                  <Loader2 size={36} className="animate-spin text-primary" />
+                  <span className="text-base font-medium">Buscando tus favoritos...</span>
+                </motion.div>
               </div>
             ) : recommendations.length > 0 ? (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
               >
                 {recommendations.map((rec, i) => (
-                  <motion.div
-                    key={rec.productoRecomendado}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                  >
+                  <motion.div key={rec.productoRecomendado} variants={itemVariants}>
                     <ProductCard
                       product={{
                         id: `rec-${i}`,
@@ -175,8 +208,8 @@ export default function Home() {
                 ))}
               </motion.div>
             ) : (
-              <div className="text-center py-8 text-content-muted">
-                <p>No se pudieron cargar las recomendaciones. ¿Está el backend corriendo?</p>
+              <div className="text-center py-12 text-content-muted bg-surface-muted rounded-2xl border border-surface-border">
+                <p className="text-lg">Pronto tendremos nuevas sorpresas para ti.</p>
               </div>
             )}
           </div>
@@ -186,46 +219,55 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-24 bg-surface relative z-10 border-t border-surface-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center"
+          >
             <motion.div
-              whileHover={{ y: -10 }}
-              className="flex flex-col items-center space-y-4 p-6 rounded-2xl bg-surface-muted border border-surface-border"
+              variants={itemVariants}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="flex flex-col items-center space-y-5 p-8 rounded-3xl bg-surface-muted/50 border border-surface-border shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <div className="p-4 bg-primary/10 rounded-full text-primary">
-                <Box size={32} />
+              <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                <Box size={36} />
               </div>
-              <h3 className="text-xl font-bold text-content-strong">Inventario en Tiempo Real</h3>
-              <p className="text-content-muted">
-                Sistema sincronizado para garantizar que siempre recibas lo que compras sin demoras.
+              <h3 className="text-xl font-bold text-content-strong">Envíos Rápidos y Seguros</h3>
+              <p className="text-content-muted leading-relaxed">
+                Tu compra lista al instante. Garantizamos que los productos que ves están siempre disponibles para ti.
               </p>
             </motion.div>
 
             <motion.div
-              whileHover={{ y: -10 }}
-              className="flex flex-col items-center space-y-4 p-6 rounded-2xl bg-surface-muted border border-surface-border"
+              variants={itemVariants}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="flex flex-col items-center space-y-5 p-8 rounded-3xl bg-surface-muted/50 border border-surface-border shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <div className="p-4 bg-secondary/10 rounded-full text-secondary">
-                <Zap size={32} />
+              <div className="p-4 bg-secondary/10 rounded-2xl text-secondary">
+                <Brain size={36} />
               </div>
-              <h3 className="text-xl font-bold text-content-strong">Recomendaciones Ágiles</h3>
-              <p className="text-content-muted">
-                Nuestro motor ML en memoria te sugiere productos basados en tu perfil y necesidades.
+              <h3 className="text-xl font-bold text-content-strong">Asesoría Inteligente</h3>
+              <p className="text-content-muted leading-relaxed">
+                ¿No sabes qué elegir? Nuestro asistente virtual te guiará paso a paso hasta encontrar tu producto ideal.
               </p>
             </motion.div>
 
             <motion.div
-              whileHover={{ y: -10 }}
-              className="flex flex-col items-center space-y-4 p-6 rounded-2xl bg-surface-muted border border-surface-border"
+              variants={itemVariants}
+              whileHover={{ y: -10, scale: 1.02 }}
+              className="flex flex-col items-center space-y-5 p-8 rounded-3xl bg-surface-muted/50 border border-surface-border shadow-sm hover:shadow-lg transition-all duration-300"
             >
-              <div className="p-4 bg-status-success/10 rounded-full text-status-success">
-                <ShieldCheck size={32} />
+              <div className="p-4 bg-status-success/10 rounded-2xl text-status-success">
+                <ShieldCheck size={36} />
               </div>
-              <h3 className="text-xl font-bold text-content-strong">Seguridad de Nivel B2B</h3>
-              <p className="text-content-muted">
-                Transacciones protegidas con encriptación JWT y tolerancia a fallos garantizada.
+              <h3 className="text-xl font-bold text-content-strong">Compra 100% Protegida</h3>
+              <p className="text-content-muted leading-relaxed">
+                Tu tranquilidad es nuestra prioridad. Todas tus compras y datos personales están protegidos con la mejor seguridad.
               </p>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

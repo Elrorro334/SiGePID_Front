@@ -7,13 +7,28 @@ import { useCartStore } from '@/store/useCartStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { useRouter } from 'next/navigation';
+
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { isAuthenticated, user, logout } = useAuthStore();
 
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      setMobileMenuOpen(false);
+      router.push(`/catalog?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
+
   useEffect(() => {
+    setIsMounted(true);
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
@@ -42,6 +57,9 @@ export const Navbar = () => {
               </div>
               <input
                 type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearch}
                 className="block w-full pl-10 pr-3 py-2.5 border border-surface-border rounded-full bg-surface-muted text-content-strong placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                 placeholder="Buscar productos, categorías..."
               />
@@ -54,7 +72,7 @@ export const Navbar = () => {
               Catálogo
             </Link>
             
-            {isAuthenticated ? (
+            {isMounted && isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <Link href="/orders" className="text-content font-medium hover:text-primary transition-colors">
                   Mis Pedidos
@@ -66,20 +84,20 @@ export const Navbar = () => {
                   <span className="text-sm font-medium text-content-strong group-hover:text-primary transition-colors">Salir</span>
                 </div>
               </div>
-            ) : (
+            ) : isMounted ? (
               <Link href="/login" className="flex items-center space-x-2 group">
                 <div className="bg-surface-muted text-content p-2 rounded-full group-hover:bg-primary group-hover:text-primary-content transition-colors">
                   <User size={20} />
                 </div>
                 <span className="text-sm font-medium text-content-strong group-hover:text-primary transition-colors">Ingresar</span>
               </Link>
-            )}
+            ) : null}
 
             {/* Cart Icon with Badge */}
             <Link href="/cart" className="relative p-2 text-content hover:text-primary transition-colors">
               <ShoppingCart size={24} />
               <AnimatePresence>
-                {totalItems > 0 && (
+                {isMounted && totalItems > 0 && (
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -97,7 +115,7 @@ export const Navbar = () => {
           <div className="md:hidden flex items-center space-x-4">
             <Link href="/cart" className="relative p-2 text-content">
               <ShoppingCart size={24} />
-              {totalItems > 0 && (
+              {isMounted && totalItems > 0 && (
                 <div className="absolute -top-1 -right-1 bg-status-danger text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
                   {totalItems}
                 </div>
@@ -129,20 +147,23 @@ export const Navbar = () => {
                 </div>
                 <input
                   type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearch}
                   className="block w-full pl-10 pr-3 py-3 border border-surface-border rounded-lg bg-surface-muted text-content-strong placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-primary"
                   placeholder="Buscar productos..."
                 />
               </div>
               <div className="flex flex-col space-y-3 pt-2">
                 <Link href="/catalog" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Catálogo</Link>
-                {isAuthenticated ? (
+                {isMounted && isAuthenticated ? (
                   <>
                     <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Mis Pedidos</Link>
                     <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-status-danger hover:bg-surface-muted">Cerrar Sesión</button>
                   </>
-                ) : (
+                ) : isMounted ? (
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-primary-light">Iniciar Sesión</Link>
-                )}
+                ) : null}
               </div>
             </div>
           </motion.div>

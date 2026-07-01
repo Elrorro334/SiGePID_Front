@@ -27,6 +27,7 @@ export default function CartPage() {
     try {
       await ordersApi.createOrder({
         userId: String(user.id),
+        userEmail: user.email,
         items: items.map(item => ({
           productId: item.productId,
           productName: item.name,
@@ -68,8 +69,12 @@ export default function CartPage() {
         <div className="flex-1 space-y-4">
           {items.map((item) => (
             <div key={item.productId} className="flex items-center gap-4 bg-surface p-4 rounded-xl border border-surface-border">
-              <div className="w-16 h-16 bg-surface-muted rounded-lg flex-shrink-0 flex items-center justify-center text-content-muted font-bold text-lg">
-                {item.name.substring(0, 2).toUpperCase()}
+              <div className="w-16 h-16 bg-surface-muted rounded-lg flex-shrink-0 flex items-center justify-center text-content-muted font-bold text-lg overflow-hidden border border-surface-border">
+                {item.imageUrl ? (
+                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                  item.name.substring(0, 2).toUpperCase()
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-content-strong truncate">{item.name}</h3>

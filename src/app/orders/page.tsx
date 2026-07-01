@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import toast from 'react-hot-toast';
 
 const STATUS_CONFIG: Record<string, { label: string; className: string; Icon: React.ElementType }> = {
   CREATED:    { label: 'Creado',      className: 'bg-surface border-surface-border text-content-strong', Icon: Clock },
@@ -101,6 +102,7 @@ export default function OrdersPage() {
                 <th className="p-4 font-semibold">Artículos</th>
                 <th className="p-4 font-semibold">Total</th>
                 <th className="p-4 font-semibold">Estado</th>
+                <th className="p-4 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
@@ -124,6 +126,30 @@ export default function OrdersPage() {
                   </td>
                   <td className="p-4">
                     <StatusBadge status={order.status} />
+                  </td>
+                  <td className="p-4 text-right flex justify-end gap-2">
+                    <Link href={`/orders/${order.id}`}>
+                      <Button variant="outline" size="sm">Ver Detalles</Button>
+                    </Link>
+                    {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-status-danger border-status-danger/20 hover:bg-status-danger hover:text-white"
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de que deseas cancelar este pedido?')) {
+                            try {
+                              await ordersApi.cancelOrder(order.id);
+                              setOrders(orders.map(o => o.id === order.id ? { ...o, status: 'CANCELLED' } : o));
+                            } catch {
+                              toast.error('No se pudo cancelar el pedido');
+                            }
+                          }
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    )}
                   </td>
                 </motion.tr>
               ))}
