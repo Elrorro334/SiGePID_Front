@@ -2,50 +2,123 @@
 
 import React, { useEffect, useState } from 'react';
 import { ProductCard } from '@/components/ui/ProductCard';
-import api from '@/lib/api';
-import { Loader2 } from 'lucide-react';
+import { catalogApi, ProductResponse } from '@/lib/api';
+import { Loader2, AlertCircle, Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 export default function CatalogPage() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [filtered, setFiltered] = useState<ProductResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    // In a real app we'd fetch from the actual API:
-    // api.get('/catalog/products').then(res => setProducts(res.data))
-    
-    // For now, since the user may not have the backend running during dev:
-    setTimeout(() => {
-      setProducts([
-        { id: '1', name: 'MacBook Pro 16"', description: 'Laptop M3 Max 32GB RAM', price: 45000, stock: 5, category: { id: 'c1', name: 'Electrónicos' } },
-        { id: '2', name: 'Monitor LG UltraWide', description: 'Monitor curvo 34 pulgadas', price: 8500, stock: 12, category: { id: 'c1', name: 'Electrónicos' } },
-        { id: '3', name: 'Teclado Mecánico Keychron', description: 'Switches Brown Hot-swappable', price: 2100, stock: 0, category: { id: 'c2', name: 'Accesorios' } },
-        { id: '4', name: 'Silla Ergonomica Herman Miller', description: 'Silla Aeron negra', price: 22000, stock: 2, category: { id: 'c3', name: 'Oficina' } },
-        { id: '5', name: 'Mouse Logitech MX Master 3', description: 'Mouse inalámbrico profesional', price: 1800, stock: 20, category: { id: 'c2', name: 'Accesorios' } },
-        { id: '6', name: 'Audífonos Sony WH-1000XM5', description: 'Cancelación de ruido activa', price: 6500, stock: 8, category: { id: 'c1', name: 'Electrónicos' } },
-      ]);
-      setLoading(false);
-    }, 1000);
+    catalogApi.getAllProducts()
+      .then(res => {
+        setProducts(res.data);
+        setFiltered(res.data);
+      })
+      .catch(() => {
+        setError(true);
+        toast.error('No se pudo cargar el catálogo. ¿Está corriendo el backend?');
+      })
+      .finally(() => setLoading(false));
   }, []);
+
+  // Filtrar al cambiar búsqueda o categoría
+  useEffect(() => {
+    let result = products;
+    if (selectedCategory !== 'Todas') {
+      result = result.filter(p => p.categoryName === selectedCategory);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q)
+      );
+    }
+    setFiltered(result);
+  }, [search, selectedCategory, products]);
+
+  // Obtener categorías únicas
+  const categories = ['Todas', ...Array.from(
+    new Set(products.map(p => p.categoryName).filter(Boolean) as string[])
+  )];
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center">
+        <div className="bg-status-danger/10 border border-status-danger/20 p-8 rounded-2xl flex flex-col items-center gap-4">
+          <AlertCircle size={40} className="text-status-danger" />
+          <h2 className="text-xl font-bold text-content-strong">Error al cargar el catálogo</h2>
+          <p className="text-content-muted">Verifica que el backend esté en ejecución en <code>localhost:8080</code>.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-black text-content-strong">Catálogo de Productos</h1>
-        <p className="text-content-muted mt-2">Encuentra los mejores artículos al mejor precio.</p>
+        <p className="text-content-muted mt-2">
+          {filtered.length} de {products.length} productos disponibles.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted" />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o descripción..."
+            className="w-full pl-10 pr-4 py-2.5 border border-surface-border rounded-lg bg-surface text-content-strong placeholder:text-content-muted focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+          />
+        </div>
+        {/* Category filter */}
+        <div className="relative">
+          <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-content-muted pointer-events-none" />
+          <select
+            value={selectedCategory}
+            onChange={e => setSelectedCategory(e.target.value)}
+            className="pl-9 pr-4 py-2.5 border border-surface-border rounded-lg bg-surface text-content-strong focus:outline-none focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer"
+          >
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-20 text-content-muted">
+          <p className="text-lg">No se encontraron productos con ese criterio.</p>
         </div>
       ) : (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
         >
-          {products.map((product) => (
+          {filtered.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </motion.div>

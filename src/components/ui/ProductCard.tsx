@@ -13,7 +13,7 @@ interface Product {
   description: string;
   price: number;
   stock: number;
-  category: { id: string, name: string };
+  categoryName?: string | null;
 }
 
 interface ProductCardProps {
@@ -77,7 +77,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
         </div>
         <div className="absolute top-3 right-3">
            <span className="bg-surface/90 backdrop-blur-sm text-content-strong text-xs font-semibold px-2 py-1 rounded-md shadow-sm border border-surface-border">
-             {product.category.name}
+             {product.categoryName ?? '—'}
            </span>
         </div>
       </div>
