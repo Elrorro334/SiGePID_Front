@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const [product, setProduct] = useState<ProductResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -19,11 +20,11 @@ export default function ProductDetailPage({ params }: { params: { id: string } }
   const router = useRouter();
 
   useEffect(() => {
-    catalogApi.getProductById(params.id)
+    catalogApi.getProductById(id)
       .then(res => setProduct(res.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (

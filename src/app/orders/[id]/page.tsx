@@ -14,7 +14,8 @@ const STATUS_CONFIG: Record<string, { label: string; className: string; Icon: Re
   CANCELLED:  { label: 'Cancelado',   className: 'bg-status-danger text-white border-status-danger',     Icon: XCircle },
 };
 
-export default function OrderDetailPage({ params }: { params: { id: string } }) {
+export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = React.use(params);
   const [order, setOrder] = useState<OrderResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -28,11 +29,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     }
 
     // El ID en la ruta es un string, pero el backend espera Long, api espera number.
-    ordersApi.getOrderById(Number(params.id))
+    ordersApi.getOrderById(Number(id))
       .then(res => setOrder(res.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [params.id, isAuthenticated, user, router]);
+  }, [id, isAuthenticated, user, router]);
 
   if (loading) {
     return (
