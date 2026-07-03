@@ -75,6 +75,11 @@ export const Navbar = () => {
             
             {isMounted && isAuthenticated ? (
               <div className="flex items-center space-x-4">
+                {user?.role === 'ADMIN' && (
+                  <Link href="/admin" className="text-accent font-semibold hover:text-accent-dark transition-colors">
+                    Panel Admin
+                  </Link>
+                )}
                 <Link href="/orders" className="text-content font-medium hover:text-primary transition-colors">
                   Mis Pedidos
                 </Link>
@@ -167,6 +172,9 @@ export const Navbar = () => {
                 <Link href="/catalog" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Catálogo</Link>
                 {isMounted && isAuthenticated ? (
                   <>
+                    {user?.role === 'ADMIN' && (
+                      <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-surface-muted hover:text-accent-dark">Panel Admin</Link>
+                    )}
                     <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Mis Pedidos</Link>
                     <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-status-danger hover:bg-surface-muted">Cerrar Sesión</button>
                   </>

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api', // API Gateway URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -92,6 +92,16 @@ export interface ProductResponse {
   updatedAt: string;
 }
 
+export interface ProductRequest {
+  name: string;
+  description: string;
+  sku: string;
+  price: number;
+  stock: number;
+  categoryId: string;
+  active: boolean;
+}
+
 export const catalogApi = {
   getAllProducts: () =>
     api.get<ProductResponse[]>('/catalog/products'),
@@ -99,6 +109,12 @@ export const catalogApi = {
     api.get<ProductResponse>(`/catalog/products/${id}`),
   getLowStockProducts: (threshold = 10) =>
     api.get<ProductResponse[]>(`/catalog/products/low-stock?threshold=${threshold}`),
+  createProduct: (data: ProductRequest) =>
+    api.post<ProductResponse>('/catalog/products', data),
+  updateProduct: (id: string, data: ProductRequest) =>
+    api.put<ProductResponse>(`/catalog/products/${id}`, data),
+  deleteProduct: (id: string) =>
+    api.delete<void>(`/catalog/products/${id}`),
 };
 
 // ============================================================
