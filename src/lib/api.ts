@@ -49,6 +49,33 @@ export const authApi = {
 };
 
 // ============================================================
+// CATALOG — CATEGORIES
+// ============================================================
+export interface CategoryResponse {
+  id: string;
+  name: string;
+  description: string;
+}
+
+export interface CategoryRequest {
+  name: string;
+  description: string;
+}
+
+export const categoriesApi = {
+  getAllCategories: () =>
+    api.get<CategoryResponse[]>('/catalog/categories'),
+  getCategoryById: (id: string) =>
+    api.get<CategoryResponse>(`/catalog/categories/${id}`),
+  createCategory: (data: CategoryRequest) =>
+    api.post<CategoryResponse>('/catalog/categories', data),
+  updateCategory: (id: string, data: CategoryRequest) =>
+    api.put<CategoryResponse>(`/catalog/categories/${id}`, data),
+  deleteCategory: (id: string) =>
+    api.delete<void>(`/catalog/categories/${id}`),
+};
+
+// ============================================================
 // CATALOG — PRODUCTS
 // ============================================================
 export interface ProductResponse {
