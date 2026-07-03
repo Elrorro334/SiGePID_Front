@@ -136,3 +136,23 @@ export const ordersApi = {
   cancelOrder: (id: number) =>
     api.put<void>(`/orders/${id}/cancel`),
 };
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+export interface NotificationResponse {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export const notificationsApi = {
+  getNotificationsByUserId: (userId: string) =>
+    api.get<NotificationResponse[]>(`/notifications/user/${userId}`),
+  markAsRead: (id: string) =>
+    api.put<void>(`/notifications/${id}/read`),
+};

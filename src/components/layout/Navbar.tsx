@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { useRouter } from 'next/navigation';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -93,6 +94,11 @@ export const Navbar = () => {
               </Link>
             ) : null}
 
+            {/* Notification Dropdown */}
+            {isMounted && isAuthenticated && (
+              <NotificationDropdown />
+            )}
+
             {/* Cart Icon with Badge */}
             <Link href="/cart" className="relative p-2 text-content hover:text-primary transition-colors">
               <ShoppingCart size={24} />
@@ -113,6 +119,9 @@ export const Navbar = () => {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-4">
+            {isMounted && isAuthenticated && (
+              <NotificationDropdown />
+            )}
             <Link href="/cart" className="relative p-2 text-content">
               <ShoppingCart size={24} />
               {isMounted && totalItems > 0 && (
