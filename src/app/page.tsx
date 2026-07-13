@@ -98,7 +98,7 @@ export default function Home() {
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { type: 'spring', stiffness: 100, damping: 15 }
+      transition: { type: 'spring' as const, stiffness: 100, damping: 15 }
     }
   };
 
@@ -199,7 +199,7 @@ export default function Home() {
                 </div>
               </div>
               <Link href="/wizard">
-                <Button variant="outline" size="default" className="hover:border-primary hover:text-primary transition-colors">
+                <Button variant="outline" size="md" className="hover:border-primary hover:text-primary transition-colors">
                   <Sparkles size={16} className="mr-2" /> Descubrir más
                 </Button>
               </Link>

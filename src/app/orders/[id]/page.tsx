@@ -90,7 +90,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           
           <div className="space-y-4">
             {order.items.map(item => (
-              <div key={item.id} className="flex justify-between items-center bg-surface-muted p-4 rounded-xl border border-surface-border">
+              <div key={item.productId} className="flex justify-between items-center bg-surface-muted p-4 rounded-xl border border-surface-border">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-surface rounded-lg flex items-center justify-center text-content-muted font-bold">
                     {item.productName.substring(0, 2).toUpperCase()}

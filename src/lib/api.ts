@@ -92,6 +92,7 @@ export interface ProductResponse {
   categoryId: string;
   categoryName: string | null;
   active: boolean;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
