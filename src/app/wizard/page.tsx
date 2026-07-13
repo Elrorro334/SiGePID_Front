@@ -159,10 +159,20 @@ export default function WizardPage() {
           <p className="text-content-muted text-lg mb-2 max-w-2xl mx-auto">
             Deja que nuestra Inteligencia Artificial analice tus preferencias y encuentre el producto perfecto para ti en segundos.
           </p>
-          <p className="text-xs text-content-muted/70 flex items-center justify-center gap-1 mt-4">
-            <Sparkles size={12} className="text-status-warning" />
-            Impulsado por el Modelo RodWiz1.0. Puede cometer errores, verifica las recomendaciones.
-          </p>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6 mx-auto max-w-fit flex items-start sm:items-center gap-3 bg-gradient-to-r from-status-warning/5 to-status-warning/10 border-2 border-status-warning/20 px-5 py-3 rounded-2xl shadow-[0_4px_20px_rgba(234,179,8,0.1)]"
+          >
+            <div className="bg-status-warning/20 p-2 rounded-full shrink-0">
+              <Sparkles size={18} className="text-status-warning animate-pulse" />
+            </div>
+            <p className="text-sm text-left">
+              <strong className="font-black text-content-strong block sm:inline">Impulsado por el Modelo RodWiz1.0. </strong>
+              <span className="text-content-muted font-medium">Puede cometer errores, verifica las recomendaciones.</span>
+            </p>
+          </motion.div>
         </motion.div>
 
         <motion.div 
