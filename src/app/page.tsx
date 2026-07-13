@@ -7,15 +7,21 @@ import { ArrowRight, Sparkles, Box, ShieldCheck, Heart, Brain, Loader2 } from 'l
 import { Button } from '@/components/ui/Button';
 import { ProductCard } from '@/components/ui/ProductCard';
 import { useAuthStore } from '@/store/useAuthStore';
-import { wizardApi, WizardResponse } from '@/lib/api';
+import { wizardApi, catalogApi, WizardResponse, ProductResponse } from '@/lib/api';
 
-// Perfil por defecto para las recomendaciones rápidas
-const DEFAULT_RANGO_EDAD = 'Adultos Jóvenes (18-35)';
-const DEFAULT_USO = 'Uso Personal';
+// Helper to generate a stable pseudo-random seed from the username
+const getSeedFromUser = (username: string) => {
+  if (!username) return 0;
+  return username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+};
+
+const RANGOS_EDAD = ['Niños (0-12)', 'Adolescentes (13-17)', 'Adultos Jóvenes (18-35)', 'Adultos (36-55)', 'Adultos Mayores (55+)'];
+const USOS_PREVISTO = ['Regalo', 'Uso Personal', 'Trabajo', 'Entretenimiento'];
+const CATEGORIAS_BASE = ['Electrónica', 'Ropa', 'Hogar', 'Deportes', 'Juguetes'];
 
 export default function Home() {
   const { isAuthenticated, user } = useAuthStore();
-  const [recommendations, setRecommendations] = useState<WizardResponse[]>([]);
+  const [recommendations, setRecommendations] = useState<ProductResponse[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -27,30 +33,55 @@ export default function Home() {
     if (!isAuthenticated || !isMounted) return;
 
     setLoadingRecs(true);
-    const categories = ['Electrónica', 'Ropa', 'Hogar', 'Deportes', 'Juguetes'];
+    
+    // Generar un perfil único para el usuario basado en su nombre
+    const seed = getSeedFromUser(user?.username || 'default');
+    const userRangoEdad = RANGOS_EDAD[seed % RANGOS_EDAD.length];
+    const userUsoPrevisto = USOS_PREVISTO[seed % USOS_PREVISTO.length];
 
-    Promise.allSettled(
-      categories.map(cat =>
-        wizardApi.predict({
-          categoria: cat,
-          rangoEdad: DEFAULT_RANGO_EDAD,
-          usoPrevisto: DEFAULT_USO,
-        })
-      )
-    )
-      .then(results => {
-        const recs = results
-          .filter(r => r.status === 'fulfilled')
-          .map(r => (r as PromiseFulfilledResult<{ data: WizardResponse }>).value.data);
+    const fetchRecommendationsAndMatch = async () => {
+      try {
+        // 1. Obtener predicciones del motor ML
+        const results = await Promise.allSettled(
+          CATEGORIAS_BASE.map(cat =>
+            wizardApi.predict({
+              categoria: cat,
+              rangoEdad: userRangoEdad,
+              usoPrevisto: userUsoPrevisto,
+            })
+          )
+        );
         
-        // Mostrar máximo 4 productos únicos
-        const unique = Array.from(
-          new Map(recs.map(r => [r.productoRecomendado, r])).values()
-        ).slice(0, 4);
-        setRecommendations(unique);
-      })
-      .finally(() => setLoadingRecs(false));
-  }, [isAuthenticated, isMounted]);
+        const predictedNames = results
+          .filter(r => r.status === 'fulfilled')
+          .map(r => (r as PromiseFulfilledResult<{ data: WizardResponse }>).value.data.productoRecomendado.toLowerCase());
+
+        // 2. Obtener productos reales del catálogo para tener imágenes e IDs verdaderos
+        const { data: allProducts } = await catalogApi.getAllProducts();
+        
+        // 3. Emparejar predicciones con productos reales
+        const matchedProducts: ProductResponse[] = [];
+        const seenIds = new Set<string>();
+
+        for (const predictedName of predictedNames) {
+          const match = allProducts.find(p => p.name.toLowerCase().includes(predictedName) && !seenIds.has(p.id));
+          if (match) {
+            matchedProducts.push(match);
+            seenIds.add(match.id);
+          }
+        }
+        
+        // Limitar a máximo 4 recomendaciones
+        setRecommendations(matchedProducts.slice(0, 4));
+      } catch (error) {
+        console.error("Error cargando recomendaciones", error);
+      } finally {
+        setLoadingRecs(false);
+      }
+    };
+
+    fetchRecommendationsAndMatch();
+  }, [isAuthenticated, isMounted, user?.username]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -163,7 +194,7 @@ export default function Home() {
                     Especialmente para ti, {user?.username} 👋
                   </h2>
                   <p className="text-content-muted text-base mt-1">
-                    Una selección curada de productos que sabemos que te encantarán.
+                    Nuestro motor de IA ha seleccionado estos productos basándose en tu perfil único.
                   </p>
                 </div>
               </div>
@@ -193,17 +224,8 @@ export default function Home() {
                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
               >
                 {recommendations.map((rec, i) => (
-                  <motion.div key={rec.productoRecomendado} variants={itemVariants}>
-                    <ProductCard
-                      product={{
-                        id: `rec-${i}`,
-                        name: rec.productoRecomendado,
-                        description: rec.descripcion,
-                        price: rec.precioPromedio,
-                        stock: rec.stockPromedio,
-                        categoryName: rec.categoriaPredominante,
-                      }}
-                    />
+                  <motion.div key={rec.id} variants={itemVariants}>
+                    <ProductCard product={rec} />
                   </motion.div>
                 ))}
               </motion.div>

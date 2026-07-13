@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Brain, RefreshCcw, ShoppingCart, TrendingUp, Tag, Package } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { wizardApi, catalogApi, WizardResponse, WizardOptions } from '@/lib/api';
-import { useCartStore } from '@/store/useCartStore';
+import { wizardApi, catalogApi, authApi, WizardResponse, WizardOptions, AuthProfileResponse, ProductResponse } from '@/lib/api';
+import { ProductCard } from '@/components/ui/ProductCard';
+import { useAuthStore } from '@/store/useAuthStore';
 import toast from 'react-hot-toast';
 
 const STEP_LABELS = ['Categoría', 'Rango de Edad', 'Uso Previsto'];
@@ -14,14 +15,17 @@ export default function WizardPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(true);
-  const [result, setResult] = useState<WizardResponse | null>(null);
+  const [results, setResults] = useState<WizardResponse[] | null>(null);
+  const [matchedProducts, setMatchedProducts] = useState<ProductResponse[] | null>(null);
+  const [profile, setProfile] = useState<AuthProfileResponse | null>(null);
+  const [hasPreferences, setHasPreferences] = useState(false);
+  const { isAuthenticated } = useAuthStore();
   const [options, setOptions] = useState<WizardOptions>({
     categorias: [],
     rangosEdad: [],
     usosPrevisto: [],
   });
   const [answers, setAnswers] = useState<string[]>([]);
-  const addItem = useCartStore(state => state.addItem);
 
   // Cargar opciones dinámicas desde el backend
   useEffect(() => {
@@ -36,7 +40,19 @@ export default function WizardPage() {
         });
       })
       .finally(() => setLoadingOptions(false));
-  }, []);
+
+    if (isAuthenticated) {
+      authApi.getProfile()
+        .then(res => {
+          setProfile(res.data);
+          if (res.data.preferredCategories && res.data.preferredCategories.length > 0 && res.data.ageRange) {
+            setHasPreferences(true);
+            setStep(2);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const currentOptions = [
     options.categorias,
@@ -54,12 +70,28 @@ export default function WizardPage() {
       // Último paso: llamar al backend
       setLoading(true);
       try {
-        const { data } = await wizardApi.predict({
-          categoria: newAnswers[0],
-          rangoEdad: newAnswers[1],
-          usoPrevisto: newAnswers[2],
-        });
-        setResult(data);
+        let mlResults: WizardResponse[] = [];
+        if (hasPreferences) {
+          const { data } = await wizardApi.predictPersonalized(value);
+          mlResults = data.recommendations;
+        } else {
+          const { data } = await wizardApi.predict({
+            categoria: newAnswers[0],
+            rangoEdad: newAnswers[1],
+            usoPrevisto: value,
+          });
+          mlResults = [data];
+        }
+        setResults(mlResults);
+
+        // Map ML results to real catalog products
+        const catalogRes = await catalogApi.getAllProducts();
+        const catalog = catalogRes.data;
+        const matches = mlResults.map(rec => {
+          return catalog.find(p => p.name.toLowerCase().includes(rec.productoRecomendado.toLowerCase()));
+        }).filter(Boolean) as ProductResponse[];
+        
+        setMatchedProducts(matches);
       } catch {
         toast.error('No se pudo conectar con el motor ML. ¿Está corriendo el backend?');
         resetWizard();
@@ -70,37 +102,10 @@ export default function WizardPage() {
   };
 
   const resetWizard = () => {
-    setStep(0);
-    setResult(null);
+    setStep(hasPreferences ? 2 : 0);
+    setResults(null);
+    setMatchedProducts(null);
     setAnswers([]);
-  };
-
-  const handleAddToCart = async () => {
-    if (!result) return;
-    try {
-      const res = await catalogApi.getAllProducts();
-      const products = res.data;
-      const match = products.find(p => p.name.toLowerCase().includes(result.productoRecomendado.toLowerCase()));
-      
-      if (match) {
-        addItem({
-          productId: match.id,
-          name: match.name,
-          price: match.price,
-          quantity: 1,
-          maxStock: match.stock,
-          imageUrl: match.imageUrl,
-        });
-        toast.success(`${match.name} agregado al carrito`, {
-          icon: '🛒',
-          style: { borderRadius: '10px', background: '#333', color: '#fff' },
-        });
-      } else {
-        toast.error('Lo sentimos, este producto no está en stock actualmente.');
-      }
-    } catch {
-      toast.error('Error al conectar con el catálogo.');
-    }
   };
 
   return (
@@ -112,15 +117,19 @@ export default function WizardPage() {
           <span className="font-bold">Asistente Inteligente SiGePID</span>
         </div>
         <h1 className="text-4xl font-black text-content-strong mb-4">Descubre tu producto ideal</h1>
-        <p className="text-content-muted text-lg">
-          Nuestro motor de árbol de decisión analiza tus respuestas para darte la mejor recomendación del catálogo.
+        <p className="text-content-muted text-lg mb-2">
+          Deja que nuestra Inteligencia Artificial analice tus preferencias y encuentre el producto perfecto para ti en segundos.
+        </p>
+        <p className="text-xs text-content-muted/70 flex items-center justify-center gap-1">
+          <Sparkles size={12} />
+          Impulsado por el Modelo RodWiz1.0. Puede cometer errores, verifica las recomendaciones.
         </p>
       </div>
 
       <div className="bg-surface border border-surface-border p-8 md:p-12 rounded-3xl shadow-xl min-h-[400px] flex flex-col relative overflow-hidden">
 
         {/* Progress bar */}
-        {!result && !loading && (
+        {!results && !loading && (
           <>
             <div className="absolute top-0 left-0 w-full h-1 bg-surface-muted">
               <motion.div
@@ -161,7 +170,7 @@ export default function WizardPage() {
               </p>
             </motion.div>
 
-          ) : result ? (
+          ) : results ? (
             /* Result */
             <motion.div
               key="result"
@@ -171,58 +180,47 @@ export default function WizardPage() {
             >
               <div className="text-center mb-8">
                 <Sparkles size={40} className="text-status-warning mx-auto mb-4" />
-                <h2 className="text-3xl font-black text-content-strong">¡Match Encontrado!</h2>
+                <h2 className="text-3xl font-black text-content-strong">{results.length > 1 ? '¡Matches Encontrados!' : '¡Match Encontrado!'}</h2>
                 <p className="text-content-muted mt-1">
-                  Basado en: <span className="font-medium text-content">{answers[0]}</span> ·{' '}
-                  <span className="font-medium text-content">{answers[1]}</span> ·{' '}
-                  <span className="font-medium text-content">{answers[2]}</span>
+                  Basado en: {hasPreferences && profile ? (
+                    <>
+                      <span className="font-medium text-content">{profile.preferredCategories?.join(', ')}</span> ·{' '}
+                      <span className="font-medium text-content">{profile.ageRange}</span> ·{' '}
+                      <span className="font-medium text-content">{answers[0]}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium text-content">{answers[0]}</span> ·{' '}
+                      <span className="font-medium text-content">{answers[1]}</span> ·{' '}
+                      <span className="font-medium text-content">{answers[2]}</span>
+                    </>
+                  )}
                 </p>
               </div>
 
-              {/* Product Card */}
-              <div className="max-w-sm mx-auto w-full bg-surface-muted border border-surface-border rounded-2xl overflow-hidden">
-                <div className="aspect-video bg-gradient-to-br from-primary/5 to-secondary/5 flex items-center justify-center">
-                  <Package size={64} className="text-primary/30" />
-                </div>
-                <div className="p-6">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <h3 className="text-xl font-black text-content-strong">{result.productoRecomendado}</h3>
-                    <span className="bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                      {Math.round(result.confianza * 100)}% Match
-                    </span>
+              {/* Product Cards Grid */}
+              <div className={`w-full ${
+                matchedProducts?.length === 1
+                  ? 'flex justify-center'
+                  : 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'
+              }`}>
+                {matchedProducts?.length === 1 ? (
+                  <div className="w-full max-w-sm">
+                    <ProductCard product={matchedProducts[0]} />
                   </div>
-                  <p className="text-content-muted text-sm mb-4">{result.descripcion}</p>
-
-                  <div className="grid grid-cols-2 gap-3 mb-5">
-                    <div className="bg-surface rounded-lg p-3 border border-surface-border">
-                      <div className="flex items-center gap-1.5 text-content-muted text-xs mb-1">
-                        <Tag size={12} /> Precio promedio
-                      </div>
-                      <div className="font-bold text-content-strong text-base">
-                        ${result.precioPromedio.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
-                      </div>
-                      <div className="text-xs text-content-muted mt-0.5">
-                        ${result.precioMin.toLocaleString('es-MX', { minimumFractionDigits: 0 })} – ${result.precioMax.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
-                      </div>
-                    </div>
-                    <div className="bg-surface rounded-lg p-3 border border-surface-border">
-                      <div className="flex items-center gap-1.5 text-content-muted text-xs mb-1">
-                        <TrendingUp size={12} /> Stock estimado
-                      </div>
-                      <div className="font-bold text-content-strong text-base">
-                        ~{result.stockPromedio} uds.
-                      </div>
-                      <div className="text-xs text-status-success mt-0.5 font-medium">Disponible</div>
-                    </div>
+                ) : (
+                  matchedProducts?.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))
+                )}
+                {matchedProducts?.length === 0 && (
+                  <div className="col-span-full text-center p-8 bg-surface-muted rounded-2xl border border-surface-border w-full">
+                    <p className="text-content-muted">Lo sentimos, no encontramos productos en stock para estas recomendaciones.</p>
                   </div>
-
-                  <Button className="w-full" onClick={handleAddToCart}>
-                    <ShoppingCart size={16} className="mr-2" /> Agregar al carrito
-                  </Button>
-                </div>
+                )}
               </div>
 
-              <div className="mt-6 text-center">
+              <div className="mt-8 text-center">
                 <Button variant="ghost" onClick={resetWizard}>
                   <RefreshCcw size={16} className="mr-2" /> Intentar con otras preferencias
                 </Button>

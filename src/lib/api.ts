@@ -35,9 +35,10 @@ export default api;
 // AUTH
 // ============================================================
 export interface LoginRequest { username: string; password: string; }
-export interface RegisterRequest { username: string; email: string; password: string; role?: string; }
+export interface RegisterRequest { username: string; email: string; password: string; role?: string; preferredCategories?: string[]; ageRange?: string; }
 export interface AuthResponse { token: string; username: string; email: string; role: string; userId: number; }
-export interface AuthProfileResponse { id: number; username: string; email: string; role: string; }
+export interface AuthProfileResponse { id: number; username: string; email: string; role: string; preferredCategories: string[] | null; ageRange: string | null; }
+export interface UserPreferencesRequest { preferredCategories: string[]; ageRange: string; }
 
 export const authApi = {
   login: (data: LoginRequest) =>
@@ -46,6 +47,9 @@ export const authApi = {
     api.post<AuthResponse>('/auth/register', { ...data, role: data.role ?? 'USER' }),
   getProfile: () =>
     api.get<AuthProfileResponse>('/auth/profile'),
+  updateEmail: (newEmail: string) => api.put<AuthProfileResponse>('/auth/profile/email', { newEmail }),
+  updatePreferences: (data: UserPreferencesRequest) =>
+    api.put<AuthProfileResponse>('/auth/profile/preferences', data),
 };
 
 // ============================================================
@@ -137,6 +141,12 @@ export interface WizardResponse {
   confianza: number;
 }
 
+export interface PersonalizedWizardResponse {
+  ageRange: string;
+  preferredCategories: string[];
+  recommendations: WizardResponse[];
+}
+
 export interface WizardOptions {
   categorias: string[];
   rangosEdad: string[];
@@ -146,6 +156,8 @@ export interface WizardOptions {
 export const wizardApi = {
   predict: (data: WizardRequest) =>
     api.post<WizardResponse>('/catalog/wizard', data),
+  predictPersonalized: (usoPrevisto: string) =>
+    api.get<PersonalizedWizardResponse>(`/catalog/wizard/personalized?usoPrevisto=${encodeURIComponent(usoPrevisto)}`),
   getOptions: () =>
     api.get<WizardOptions>('/catalog/wizard/options'),
 };

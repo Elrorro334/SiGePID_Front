@@ -83,12 +83,12 @@ export const Navbar = () => {
                 <Link href="/orders" className="text-content font-medium hover:text-primary transition-colors">
                   Mis Pedidos
                 </Link>
-                <div className="flex items-center space-x-2 cursor-pointer group" onClick={logout}>
+                <Link href="/profile" className="flex items-center space-x-2 cursor-pointer group">
                   <div className="bg-primary-light text-primary p-2 rounded-full group-hover:bg-primary group-hover:text-primary-content transition-colors">
                     <User size={20} />
                   </div>
-                  <span className="text-sm font-medium text-content-strong group-hover:text-primary transition-colors">Salir</span>
-                </div>
+                  <span className="text-sm font-medium text-content-strong group-hover:text-primary transition-colors">Mi Perfil</span>
+                </Link>
               </div>
             ) : isMounted ? (
               <Link href="/login" className="flex items-center space-x-2 group">
@@ -176,7 +176,7 @@ export const Navbar = () => {
                       <Link href="/admin" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-accent hover:bg-surface-muted hover:text-accent-dark">Panel Admin</Link>
                     )}
                     <Link href="/orders" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Mis Pedidos</Link>
-                    <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-status-danger hover:bg-surface-muted">Cerrar Sesión</button>
+                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-content-strong hover:bg-surface-muted hover:text-primary">Mi Perfil</Link>
                   </>
                 ) : isMounted ? (
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base font-medium text-primary hover:bg-primary-light">Iniciar Sesión</Link>

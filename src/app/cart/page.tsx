@@ -9,6 +9,7 @@ import { Trash2, Plus, Minus, CreditCard, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
@@ -72,7 +73,7 @@ export default function CartPage() {
             <div key={item.productId} className="flex items-center gap-4 bg-surface p-4 rounded-xl border border-surface-border">
               <div className="w-16 h-16 bg-surface-muted rounded-lg flex-shrink-0 flex items-center justify-center text-content-muted font-bold text-lg overflow-hidden border border-surface-border">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                  <ImageWithLoader src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                 ) : (
                   item.name.substring(0, 2).toUpperCase()
                 )}

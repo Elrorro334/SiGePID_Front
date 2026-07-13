@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/useCartStore';
 import toast from 'react-hot-toast';
 
 import Link from 'next/link';
+import { ImageWithLoader } from './ImageWithLoader';
 
 interface Product {
   id: string;
@@ -65,10 +66,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       {/* Product Image */}
       <div className="relative aspect-square bg-surface-muted overflow-hidden z-10 pointer-events-none">
         {product.imageUrl ? (
-          <img 
+          <ImageWithLoader 
             src={product.imageUrl} 
             alt={product.name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-contain mix-blend-multiply p-2 transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-content-muted font-medium bg-gradient-to-br from-surface-muted to-surface-border">
@@ -118,14 +119,14 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           <Button 
             variant={inCart ? 'secondary' : 'primary'} 
             size="sm" 
-            className="rounded-full px-4"
+            className="flex-shrink-0 whitespace-nowrap !rounded-lg"
             disabled={!inStock}
             onClick={handleAddToCart}
           >
             {inCart ? (
               <><Check size={16} className="mr-1.5" /> {inCart.quantity} en carrito</>
             ) : (
-              <><ShoppingCart size={16} className="mr-1.5" /> Agregar</>
+              <><ShoppingCart size={16} className="sm:mr-1.5" /> <span className="hidden sm:inline">Agregar</span></>
             )}
           </Button>
         </div>

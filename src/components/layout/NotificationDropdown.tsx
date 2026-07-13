@@ -13,9 +13,9 @@ export const NotificationDropdown = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
-    if (isAuthenticated && user?.userId) {
+    if (isAuthenticated && user?.id) {
       try {
-        const response = await notificationsApi.getNotificationsByUserId(user.userId.toString());
+        const response = await notificationsApi.getNotificationsByUserId(user.id.toString());
         // Sort descending by date
         const sorted = response.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setNotifications(sorted);

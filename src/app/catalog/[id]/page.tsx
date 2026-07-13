@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -77,7 +78,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {/* Image Section */}
         <div className="w-full md:w-1/2 bg-surface-muted aspect-square flex items-center justify-center relative">
           {product.imageUrl ? (
-            <img 
+            <ImageWithLoader 
               src={product.imageUrl} 
               alt={product.name}
               className="w-full h-full object-cover"
