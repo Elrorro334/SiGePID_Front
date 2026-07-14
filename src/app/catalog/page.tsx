@@ -66,7 +66,7 @@ function CatalogContent() {
         <div className="bg-status-danger/10 border border-status-danger/20 p-8 rounded-2xl flex flex-col items-center gap-4">
           <AlertCircle size={40} className="text-status-danger" />
           <h2 className="text-xl font-bold text-content-strong">Error al cargar el catálogo</h2>
-          <p className="text-content-muted">Verifica que el backend esté en ejecución en <code>localhost:8080</code>.</p>
+          <p className="text-content-muted">Verifica que el backend esté en ejecución y la conexión a internet sea estable.</p>
         </div>
       </div>
     );
