@@ -11,26 +11,33 @@ export const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated, user } = useAuthStore();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const hasErrorRef = useRef(false);
+  const userId = user?.id;
 
   const fetchNotifications = async () => {
-    if (isAuthenticated && user?.id) {
+    if (isAuthenticated && userId && !hasErrorRef.current) {
       try {
-        const response = await notificationsApi.getNotificationsByUserId(user.id.toString());
+        const response = await notificationsApi.getNotificationsByUserId(userId.toString());
         // Sort descending by date
         const sorted = response.data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setNotifications(sorted);
-      } catch (error) {
-        console.error("Failed to fetch notifications", error);
+      } catch (error: any) {
+        if (error?.response?.status === 403 || error?.response?.status === 401) {
+          hasErrorRef.current = true;
+        } else {
+          console.warn("Could not fetch notifications:", error?.message || error);
+        }
       }
     }
   };
 
   useEffect(() => {
+    if (!isAuthenticated || !userId) return;
     fetchNotifications();
     // Poll every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, userId]);
 
   // Handle outside click
   useEffect(() => {

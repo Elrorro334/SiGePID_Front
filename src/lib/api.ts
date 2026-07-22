@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://sigepidback-production.up.railway.app/api',
@@ -17,6 +18,9 @@ api.interceptors.request.use(
           if (state.token) {
             config.headers.Authorization = `Bearer ${state.token}`;
           }
+          if (state.user && state.user.id) {
+            config.headers['X-User-Id'] = state.user.id.toString();
+          }
         } catch (error) {
           console.error("Error parsing auth state", error);
         }
@@ -25,6 +29,18 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (typeof window !== 'undefined' && error.response && error.response.status === 401) {
+      try {
+        useAuthStore.getState().logout();
+      } catch (e) {}
+    }
     return Promise.reject(error);
   }
 );

@@ -42,9 +42,14 @@ export default function ProfilePage() {
         setNewEmail(data.email);
         setPreferredCategories(data.preferredCategories || []);
         setAgeRange(data.ageRange || '');
-      } catch (err) {
-        console.error(err);
-        setError('No se pudo cargar el perfil');
+      } catch (err: any) {
+        console.error("Profile load error:", err);
+        if (err?.response?.status === 401 || err?.response?.status === 403 || err?.response?.status === 500) {
+          setError('Tu sesión no es válida o ha expirado. Por favor vuelve a iniciar sesión.');
+          logout();
+        } else {
+          setError('No se pudo cargar el perfil');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -108,9 +113,14 @@ export default function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-red-500 mb-4">{error || 'Perfil no encontrado'}</p>
-        <Button onClick={() => router.push('/')}>Volver al inicio</Button>
+      <div className="container mx-auto px-4 py-12 text-center max-w-md">
+        <div className="bg-surface border border-surface-border rounded-2xl p-8 shadow-sm">
+          <p className="text-status-danger font-semibold mb-6">{error || 'Perfil no encontrado'}</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-3">
+            <Button variant="outline" onClick={() => router.push('/')}>Volver al inicio</Button>
+            <Button onClick={() => { logout(); router.push('/login'); }}>Iniciar sesión</Button>
+          </div>
+        </div>
       </div>
     );
   }

@@ -255,7 +255,10 @@ export default function WizardPage() {
                   <motion.div 
                     initial={{ scale: 0 }} 
                     animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
-                    transition={{ type: 'spring', delay: 0.2 }}
+                    transition={{
+                      scale: { type: 'spring', delay: 0.2 },
+                      rotate: { duration: 0.5, ease: "easeInOut", delay: 0.2 }
+                    }}
                     className="inline-block bg-status-warning/20 p-4 rounded-full mb-4"
                   >
                     <Sparkles size={40} className="text-status-warning" />
