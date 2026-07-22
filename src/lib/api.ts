@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://sigepidback-production.up.railway.app/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://sigepidapi-production.up.railway.app/api/',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -39,7 +39,7 @@ api.interceptors.response.use(
     if (typeof window !== 'undefined' && error.response && error.response.status === 401) {
       try {
         useAuthStore.getState().logout();
-      } catch (e) {}
+      } catch (e) { }
     }
     return Promise.reject(error);
   }
